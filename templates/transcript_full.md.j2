@@ -1,0 +1,25 @@
+# 视频完整语音转文本
+
+## 视频信息
+
+- 来源：{{ video.source }}
+- 标题：{{ video.title }}
+- 时长：{{ video.duration_text }}
+- 处理时间：{{ processed_at }}
+
+## 完整转写
+
+{% if segments %}
+{% for segment in segments %}
+### {{ segment.start_text }} - {{ segment.end_text }}
+
+{% for frame in segment.frames %}
+![]({{ frame.relative_path }})
+
+{% endfor %}
+{{ segment.text }}
+
+{% endfor %}
+{% else %}
+> 未获得语音转写结果。请检查视频音频轨道或 ASR 配置。
+{% endif %}

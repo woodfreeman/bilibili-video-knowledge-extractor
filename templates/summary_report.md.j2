@@ -1,0 +1,69 @@
+# 视频内容总结报告
+
+## 一、视频基本信息
+
+- 来源：{{ video.source }}
+- 标题：{{ video.title }}
+- 时长：{{ video.duration_text }}
+- 处理时间：{{ processed_at }}
+- 转写段数：{{ segment_count }}
+- 关键画面数：{{ keyframe_count }}
+
+## 二、视频核心主题
+
+{{ core_theme }}
+
+## 三、分章节摘要
+
+{% for chapter in chapters %}
+### {{ loop.index }}. {{ chapter.title }}
+
+- 时间范围：{{ chapter.start_text }} - {{ chapter.end_text }}
+- 核心内容：{{ chapter.summary }}
+- 关键画面：
+
+{% for frame in chapter.frames %}
+![]({{ frame.relative_path }})
+
+{% endfor %}
+{% endfor %}
+
+## 四、关键知识点
+
+| 序号 | 知识点 | 对应时间 | 关键画面 | 说明 |
+|---|---|---|---|---|
+{% for item in knowledge_points %}
+| {{ loop.index }} | {{ item.title }} | {{ item.time_text }} | {{ item.frame_ref }} | {{ item.note }} |
+{% endfor %}
+
+## 五、重要画面与对应讲解
+
+{% if keyframes %}
+{% for frame in keyframes %}
+### 画面 {{ loop.index }}：{{ frame.title }}
+
+- 时间：{{ frame.timestamp_text }}
+- 画面说明：{{ frame.reason }}
+- 对应话术：{{ frame.nearby_text }}
+- 可沉淀知识：{{ frame.reusable_note }}
+
+![]({{ frame.relative_path }})
+
+{% endfor %}
+{% else %}
+> 未检测到稳定的内容型关键画面。可降低 `content_score_threshold` 或启用 OCR 后重试。
+{% endif %}
+
+## 六、可复用方法论 / SOP
+
+{{ sop_text }}
+
+## 七、适合沉淀为 Skill 的内容
+
+{{ skill_candidates }}
+
+## 八、附录：完整时间轴索引
+
+{% for item in timeline %}
+- {{ item.start_text }} - {{ item.end_text }}：{{ item.text }}
+{% endfor %}

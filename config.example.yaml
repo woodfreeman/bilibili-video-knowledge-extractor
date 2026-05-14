@@ -1,0 +1,67 @@
+download:
+  format: "bestvideo*+bestaudio/best"
+  merge_output_format: "mp4"
+  retries: 3
+  socket_timeout_seconds: 30
+
+video:
+  max_duration_seconds: 14400
+  allow_long_videos: false
+  frame_max_width: 1280
+
+asr:
+  model_size: "medium"
+  device: "auto"
+  compute_type: "auto"
+  language: "zh"
+  vad_filter: true
+  beam_size: 5
+
+scene:
+  threshold: 27.0
+  min_scene_len_seconds: 2.0
+  fallback_sample_fps: 1.0
+  fallback_hist_threshold: 0.45
+  long_scene_interval_seconds: 45.0
+
+ocr:
+  enabled: true
+  engine: "easyocr"
+  languages: ["ch_sim", "en"]
+  min_confidence: 0.35
+
+keyframe:
+  only_content_frames: true
+  content_score_threshold: 45.0
+  min_ocr_chars: 8
+  min_text_area_ratio: 0.002
+  min_edge_density: 0.025
+  blur_threshold: 45.0
+  hash_distance_threshold: 6
+  max_frames_per_video: 160
+  prefer_ocr_weight: 0.55
+  prefer_visual_weight: 0.35
+  prefer_vlm_weight: 0.10
+
+vlm:
+  enabled: false
+  provider: "none"
+  model: ""
+  endpoint: ""
+  threshold: 60
+  timeout_seconds: 45
+
+alignment:
+  max_alignment_distance_seconds: 20.0
+  attach_frames_per_segment: 2
+
+report:
+  generate_markdown: true
+  generate_html: false
+  max_chapter_seconds: 300
+  max_timeline_items: 120
+
+runtime:
+  resume: true
+  keep_intermediate: true
+  log_level: "INFO"

@@ -1,0 +1,12 @@
+{
+  "input": "https://www.bilibili.com/video/BVxxxx",
+  "output": "./outputs/demo",
+  "cookies": "./cookies.txt",
+  "asr_model": "medium",
+  "enable_ocr": true,
+  "enable_vlm": false,
+  "only_content_frames": true,
+  "generate_html": true,
+  "generate_markdown": true,
+  "keep_intermediate": true
+}
