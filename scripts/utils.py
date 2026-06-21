@@ -108,6 +108,15 @@ def read_json(path: Path, default: Any = None) -> Any:
 
 
 def to_jsonable(value: Any) -> Any:
+    # Patched 2026-06-21: handle numpy scalars (e.g. int32 from EasyOCR/OpenCV).
+    np = _get_numpy()
+    if np is not None:
+        if isinstance(value, np.integer):
+            return int(value)
+        if isinstance(value, np.floating):
+            return float(value)
+        if isinstance(value, np.ndarray):
+            return value.tolist()
     if hasattr(value, "model_dump"):
         return value.model_dump()
     if hasattr(value, "__dataclass_fields__"):
@@ -116,9 +125,17 @@ def to_jsonable(value: Any) -> Any:
         return str(value)
     if isinstance(value, dict):
         return {k: to_jsonable(v) for k, v in value.items()}
-    if isinstance(value, list):
+    if isinstance(value, (list, tuple)):
         return [to_jsonable(v) for v in value]
     return value
+
+
+def _get_numpy():
+    try:
+        import numpy as np
+        return np
+    except ImportError:
+        return None
 
 
 def run_command(
