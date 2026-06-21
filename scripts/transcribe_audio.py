@@ -31,11 +31,11 @@ def transcribe_audio(
         segments = _transcribe_with_openai_whisper(audio_path, model_size, language, logger)
 
     if not segments:
-        raise StageError(
-            "ASR returned empty transcript.",
-            "Check whether the video audio is silent, try a larger ASR model, or inspect the extracted WAV file.",
-            "transcribe",
-        )
+        # Patched 2026-06-21: write empty list and keep pipeline moving (so downstream
+        # scene/keyframe/ocr/report stages can still run for silent test videos).
+        logger.warning("ASR returned empty transcript; writing empty list to keep pipeline moving.")
+        write_json(output_json, [])
+        return segments
     write_json(output_json, segments)
     return segments
 
