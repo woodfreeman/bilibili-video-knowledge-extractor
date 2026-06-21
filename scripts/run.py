@@ -43,6 +43,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--generate-markdown", default=None, help="true/false")
     parser.add_argument("--keep-intermediate", default=None, help="true/false")
     parser.add_argument("--resume", default=None, help="true/false")
+    # P0 patch 2026-06-21: pass-through options for B 站 download edge cases.
+    parser.add_argument("--user-agent", default=None,
+                        help="Custom User-Agent header for yt-dlp. Default: Chrome 120.")
+    parser.add_argument("--extractor-args", default=None,
+                        help="yt-dlp --extractor-args value, e.g. 'bilibili:api_version=v2'.")
+    parser.add_argument("--download-format", default=None,
+                        help="yt-dlp -f value, e.g. 'bv*+ba/best[height<=1080]/best'.")
     return parser.parse_args()
 
 
@@ -67,6 +74,12 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
         "runtime": {
             "keep_intermediate": bool_from_cli(args.keep_intermediate),
             "resume": bool_from_cli(args.resume),
+        },
+        # P0 patch 2026-06-21: pass-through B 站 download options
+        "download": {
+            **({"user_agent": args.user_agent} if args.user_agent else {}),
+            **({"extractor_args": args.extractor_args} if args.extractor_args else {}),
+            **({"format": args.download_format} if args.download_format else {}),
         },
     }
     return deep_merge(config, overrides)

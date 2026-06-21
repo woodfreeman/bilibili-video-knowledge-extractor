@@ -268,3 +268,14 @@ def cleanup_workdir(work_dir: Path, keep_intermediate: bool, logger: logging.Log
     if candidate_dir.exists():
         shutil.rmtree(candidate_dir)
         logger.info("Removed candidate frame directory: %s", candidate_dir)
+    # P0 patch 2026-06-21: also remove large source.mp4 / audio.wav when
+    # keep_intermediate=False (a 1hr B 站 video is ~500MB; without this,
+    # work_dir keeps them around forever).
+    for name in ("source.mp4", "source.webm", "source.mkv", "audio.wav", "source.info.json"):
+        p = work_dir / name
+        if p.exists():
+            try:
+                p.unlink()
+                logger.info("Removed intermediate: %s", p)
+            except OSError as e:
+                logger.warning("Could not remove %s: %s", p, e)

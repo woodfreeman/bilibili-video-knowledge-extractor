@@ -70,11 +70,24 @@ def extract_audio(
         logger.info("Reusing extracted audio: %s", audio_path)
         return audio_path
     if not media_info.get("has_audio"):
-        raise StageError(
-            "Video has no audio stream.",
-            "Provide a video with audio, or extend the Skill to generate a visual-only report.",
-            "extract_audio",
+        # P0 patch 2026-06-21: no audio → generate zero-duration silent WAV placeholder
+        # and continue (so downstream transcribe gets [] and pipeline falls through to
+        # scene/keyframe/ocr/report instead of dying).
+        logger.warning(
+            "Video has no audio stream. Generating silent placeholder WAV so pipeline can continue."
         )
+        audio_path.parent.mkdir(parents=True, exist_ok=True)
+        run_command(
+            [
+                "ffmpeg", "-y",
+                "-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono",
+                "-t", "0.1",
+                str(audio_path),
+            ],
+            logger, "extract_audio",
+        )
+        write_json(audio_path.with_suffix(".json"), {"audio_path": str(audio_path), "silent": True})
+        return audio_path
     audio_path.parent.mkdir(parents=True, exist_ok=True)
     command = [
         "ffmpeg",

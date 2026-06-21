@@ -1,4 +1,4 @@
-yt-dlp>=2024.12.13
+yt-dlp>=2025.10.0  # woodfreeman 2026-06-21: BV URL 412 需要 ≥2025.10 才支持 B 站新 WBI 签名
 faster-whisper>=1.1.0
 openai-whisper>=20240930
 scenedetect[opencv]>=0.6.4

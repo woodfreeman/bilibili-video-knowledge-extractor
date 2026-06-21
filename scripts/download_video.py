@@ -62,6 +62,26 @@ def download_bilibili_video(
     info_json = work_dir / "source.info.json"
     download_config = config.get("download", {})
 
+    # P0 patch 2026-06-21: expand b23.tv short URLs to full bilibili URLs first
+    # (b23.tv 短链 yt-dlp 经常 302 后 gzip decode 失败)
+    if "b23.tv/" in url:
+        try:
+            import subprocess
+            expanded = subprocess.run(
+                ["curl", "-sLI", "-m", "10", url],
+                capture_output=True, text=True, timeout=15
+            )
+            location = ""
+            for line in expanded.stdout.splitlines():
+                if line.lower().startswith("location:"):
+                    location = line.split(":", 1)[1].strip()
+                    break
+            if location and "bilibili.com" in location:
+                logger.info("Expanded b23.tv short URL to: %s", location)
+                url = location
+        except Exception as e:
+            logger.warning("Could not expand b23.tv URL (will try as-is): %s", e)
+
     command = [
         sys.executable,
         "-m",
@@ -75,22 +95,34 @@ def download_bilibili_video(
         "--socket-timeout",
         str(download_config.get("socket_timeout_seconds", 30)),
         "-f",
-        str(download_config.get("format", "bestvideo*+bestaudio/best")),
+        str(download_config.get("format", "bv*+ba/best[height<=1080]/best")),
         "--merge-output-format",
         str(download_config.get("merge_output_format", "mp4")),
+        # P0 patch 2026-06-21: B 站 412 风控需要 UA + Referer
+        # (read from config, fallback to Chrome 120 default)
+        "--add-header",
+        f"User-Agent:{download_config.get('user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')}",
+        "--add-header",
+        "Referer:https://www.bilibili.com/",
+        # P0 patch 2026-06-21: B 站 2025+ WBI 签名需要 extractor-args
+        # (read from config, fallback to bilibili:api_version=v2)
+        "--extractor-args",
+        str(download_config.get("extractor_args", "bilibili:api_version=v2")),
         "-o",
         output_template,
         url,
     ]
     if cookies:
         cookie_path = Path(cookies).expanduser()
+        # P0 patch 2026-06-21: cookies 不存在 warn skip 而不 raise（用户可能想下不需登录的视频）
         if not cookie_path.exists():
-            raise StageError(
-                f"Cookies file does not exist: {cookies}",
-                "Export cookies.txt from a browser you control, then pass its path with --cookies.",
-                "download",
+            logger.warning(
+                "Cookies file not found at %s — downloading WITHOUT login. "
+                "If the video requires login, this will fail.",
+                cookie_path,
             )
-        command[3:3] = ["--cookies", str(cookie_path)]
+        else:
+            command[3:3] = ["--cookies", str(cookie_path)]
 
     logger.info("Downloading Bilibili video with yt-dlp. This may take a while.")
     try:
@@ -98,7 +130,8 @@ def download_bilibili_video(
     except StageError as exc:
         exc.suggestion = (
             "Confirm the video is accessible. If it requires login, provide a legal cookies.txt "
-            "with --cookies. This Skill does not bypass payment, DRM, or permission restrictions."
+            "with --cookies. If 412, upgrade yt-dlp (`pip install -U yt-dlp>=2025.10.0`). "
+            "This Skill does not bypass payment, DRM, or permission restrictions."
         )
         raise
 
