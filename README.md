@@ -29,17 +29,27 @@ python scripts/run.py \
 处理 B 站视频：
 
 ```bash
+# 第一步：导出并转换 cookies（一次性）
+python scripts/import_cookies.py /path/to/exported-cookies.txt --convert ./cookies-netscape.txt
+
+# 第二步：跑 skill
 python scripts/run.py \
   --input "https://www.bilibili.com/video/BVxxxx" \
   --output "./outputs/demo" \
-  --cookies "./cookies.txt" \
+  --cookies "./cookies-netscape.txt" \
   --asr-model "medium" \
   --enable-ocr true \
   --enable-vlm false \
   --generate-html true
 ```
 
-本工具只处理用户有权限访问的视频。不要把账号、密码、Cookie 或 Token 写入代码；如需登录态，请使用浏览器导出的 `cookies.txt`。
+本工具只处理用户有权限访问的视频。不要把账号、密码、Cookie 或 Token 写入代码；如需登录态，请使用浏览器导出的 `cookies.txt` 并用 `import_cookies.py --convert` 转成 yt-dlp 兼容的 Netscape 格式。
+
+`import_cookies.py` 接受两种格式自动识别：
+- **Netscape 格式**（tab-separated）— 来自 *Get cookies.txt LOCALLY* 扩展
+- **HTTP Cookie 头格式**（`name=value;name=value;...`）— 来自 DevTools 复制
+
+需要 `yt-dlp >= 2025.10.0`（B 站 2025+ 强制 WBI 签名）。旧版本会 412 拦截。
 
 ## 输出结构
 
@@ -104,8 +114,10 @@ python scripts/run.py --config config.yaml --input ./demo.mp4 --output ./outputs
 ## 故障排查
 
 - `ffmpeg not found`: 安装 ffmpeg 并确认 PATH。
-- B 站下载失败：确认链接可访问；需要登录时传入合法 `cookies.txt`。
+- B 站下载失败：确认链接可访问；需要登录时用 `scripts/import_cookies.py --convert` 准备合法 Netscape cookies.txt 后用 `--cookies` 传入。
+- B 站下载 412：升级 yt-dlp (`pip install -U yt-dlp>=2025.10.0`)，旧版本不支持 B 站新 WBI 签名。
 - ASR 为空：检查视频音轨，尝试更大 ASR 模型。
+- ASR 报 `libcublas.so.12 not found`：服务器无 GPU，跑时加 `CUDA_VISIBLE_DEVICES=-1` 强制 CPU。
 - OCR 没有结果：先关闭 OCR 跑通主流程，或安装 EasyOCR/PaddleOCR。
 - 关键帧太少：降低 `keyframe.content_score_threshold`。
 - 关键帧太多：提高阈值或降低 `max_frames_per_video`。
